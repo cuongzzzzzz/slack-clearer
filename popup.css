@@ -233,6 +233,14 @@ body {
   outline: none;
 }
 
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  filter: none;
+  box-shadow: none;
+}
+
 .btn-primary {
   background: var(--primary-gradient);
   padding: 14px 24px;
@@ -260,6 +268,12 @@ body {
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+
+.btn-compact {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-size: 11px;
 }
 
 .btn-danger {
@@ -539,6 +553,44 @@ input[type="range"] {
 }
 
 /* Progress Panel Details */
+.running-task-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.running-task-banner.hidden {
+  display: none !important;
+}
+
+.running-task-banner > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.running-task-banner strong {
+  font-size: 12px;
+  color: #c4b5fd;
+}
+
+.running-task-banner span {
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.progress-back-button {
+  width: 100%;
+  padding: 9px 18px;
+  margin-bottom: 12px;
+}
+
 .progress-header {
   text-align: center;
   margin-bottom: 16px;
