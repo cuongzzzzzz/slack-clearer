@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Message Deleter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <svg class="slack-logo-icon" viewBox="0 0 100 100" width="28" height="28">
+          <path d="M 20 50 A 10 10 0 1 1 40 50 A 10 10 0 1 1 20 50" fill="#E01E5A"/>
+          <path d="M 50 20 A 10 10 0 1 1 50 40 A 10 10 0 1 1 50 20" fill="#36C5F0"/>
+          <path d="M 60 50 A 10 10 0 1 1 80 50 A 10 10 0 1 1 60 50" fill="#2EB67D"/>
+          <path d="M 50 60 A 10 10 0 1 1 50 80 A 10 10 0 1 1 50 60" fill="#ECB22E"/>
+          <rect x="35" y="45" width="30" height="10" rx="5" fill="#fff" opacity="0.9"/>
+        </svg>
+        <h1>Slack Clearer</h1>
+      </div>
+      <div class="connection-badge" id="conn-badge">
+        <span class="dot"></span>
+        <span class="badge-text" id="conn-status">Đang kiểm tra...</span>
+      </div>
+    </header>
+
+    <!-- Main Content Panel -->
+    <main class="app-body">
+      <!-- Error / Tab check state -->
+      <div id="panel-no-slack" class="state-panel hidden">
+        <div class="icon-warning">⚠️</div>
+        <h3>Không tìm thấy tab Slack</h3>
+        <p>Vui lòng mở ứng dụng Slack trên web (ví dụ: <code>app.slack.com</code>) rồi mở lại tiện ích này.</p>
+        <button id="btn-open-slack" class="btn btn-secondary">Mở Slack Web</button>
+      </div>
+
+      <!-- Loaded / Setup Panel -->
+      <div id="panel-setup" class="state-panel">
+        <!-- Workspace info card -->
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">Workspace:</span>
+            <span class="info-value" id="workspace-name">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Tài khoản:</span>
+            <span class="info-value" id="user-name">-</span>
+          </div>
+        </div>
+
+        <!-- Before Load Conversations -->
+        <div id="subpanel-pre-load" class="subpanel">
+          <p class="description-text">Bắt đầu bằng cách lấy danh sách toàn bộ các kênh và hộp thoại chat trong Workspace của bạn.</p>
+          <button id="btn-fetch-conversations" class="btn btn-primary btn-glow">
+            <span>Tải Danh Sách Hội Thoại</span>
+          </button>
+        </div>
+
+        <!-- After Load Conversations -->
+        <div id="subpanel-loaded" class="subpanel hidden">
+          <!-- Filter & Selection Controls -->
+          <div class="selection-tools">
+            <div class="search-box">
+              <input type="text" id="search-conversations" placeholder="Tìm kiếm hội thoại...">
+            </div>
+            <div class="filter-buttons">
+              <button id="btn-select-all" class="btn btn-tiny">Tất cả</button>
+              <button id="btn-select-channels" class="btn btn-tiny">Chỉ Kênh</button>
+              <button id="btn-select-dms" class="btn btn-tiny">Chỉ DM</button>
+              <button id="btn-deselect-all" class="btn btn-tiny">Bỏ chọn</button>
+            </div>
+          </div>
+
+          <!-- Conversations list scrollable container -->
+          <div class="list-container">
+            <div id="conversations-list" class="conversations-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Config Accordion / Options -->
+          <div class="options-container">
+            <h3>Cấu Hình Xóa</h3>
+            <div class="options-grid">
+              <div class="form-group">
+                <label for="input-target-user-id">Xóa tin nhắn của User ID:</label>
+                <div class="input-with-hint">
+                  <input type="text" id="input-target-user-id" placeholder="Mặc định: Chính bạn">
+                  <span class="field-hint" id="my-userid-hint"></span>
+                </div>
+              </div>
+              <div class="form-group flex-row">
+                <div class="checkbox-wrapper">
+                  <input type="checkbox" id="chk-delete-threads" checked>
+                  <label for="chk-delete-threads">Xoá cả tin nhắn trong Thread</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="range-delay">Tốc độ trễ giữa các lần xóa: <span id="delay-val">300ms</span></label>
+                <input type="range" id="range-delay" min="100" max="2000" step="50" value="300">
+              </div>
+            </div>
+          </div>
+
+          <!-- Start Trigger -->
+          <div class="action-footer">
+            <button id="btn-start-deletion" class="btn btn-danger btn-glow">
+              <span>Bắt Đầu Xóa Tự Động</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deleting / Progress Panel -->
+      <div id="panel-progress" class="state-panel hidden">
+        <div class="progress-header">
+          <h3 id="progress-status-text">Đang xóa tin nhắn...</h3>
+          <div class="active-channel" id="progress-active-channel">-</div>
+        </div>
+
+        <!-- Beautiful circular/linear progress bar -->
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar-track">
+            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div class="progress-stats">
+            <span id="progress-count">Đã xóa: 0 tin nhắn</span>
+          </div>
+        </div>
+
+        <!-- Execution controls -->
+        <div class="control-buttons">
+          <button id="btn-pause" class="btn btn-warning">Tạm Dừng</button>
+          <button id="btn-resume" class="btn btn-success hidden">Tiếp Tục</button>
+          <button id="btn-stop" class="btn btn-danger-solid">Dừng Lại</button>
+        </div>
+
+        <!-- Terminal-like Console Logs -->
+        <div class="terminal-container">
+          <div class="terminal-header">
+            <span>NHẬT KÝ HOẠT ĐỘNG</span>
+            <button id="btn-clear-logs" class="btn btn-tiny">Clear</button>
+          </div>
+          <div id="terminal-body" class="terminal-body">
+            <!-- Dynamically populated logs -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
