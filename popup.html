@@ -41,6 +41,13 @@
 
       <!-- Loaded / Setup Panel -->
       <div id="panel-setup" class="state-panel">
+        <div id="running-task-banner" class="running-task-banner hidden">
+          <div>
+            <strong id="running-task-title">Tiến trình xóa đang chạy nền</strong>
+            <span id="running-task-summary">Đã xóa: 0 tin nhắn</span>
+          </div>
+          <button id="btn-view-progress" class="btn btn-secondary btn-compact">Xem tiến trình</button>
+        </div>
         <!-- Workspace info card -->
         <div class="info-card">
           <div class="info-row">
@@ -139,6 +146,8 @@
           <button id="btn-resume" class="btn btn-success hidden">Tiếp Tục</button>
           <button id="btn-stop" class="btn btn-danger-solid">Dừng Lại</button>
         </div>
+
+        <button id="btn-back-menu" class="btn btn-secondary progress-back-button">Về menu</button>
 
         <!-- Terminal-like Console Logs -->
         <div class="terminal-container">

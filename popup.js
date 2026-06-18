@@ -8,6 +8,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const panelNoSlack = document.getElementById("panel-no-slack");
   const panelSetup = document.getElementById("panel-setup");
   const panelProgress = document.getElementById("panel-progress");
+  const runningTaskBanner = document.getElementById("running-task-banner");
+  const runningTaskTitle = document.getElementById("running-task-title");
+  const runningTaskSummary = document.getElementById("running-task-summary");
   
   const subpanelPreLoad = document.getElementById("subpanel-pre-load");
   const subpanelLoaded = document.getElementById("subpanel-loaded");
@@ -37,6 +40,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnPause = document.getElementById("btn-pause");
   const btnResume = document.getElementById("btn-resume");
   const btnStop = document.getElementById("btn-stop");
+  const btnBackMenu = document.getElementById("btn-back-menu");
+  const btnViewProgress = document.getElementById("btn-view-progress");
   const btnClearLogs = document.getElementById("btn-clear-logs");
   
   const btnSelectAll = document.getElementById("btn-select-all");
@@ -49,6 +54,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   let conversations = [];
   let selectedChannelIds = new Set();
   let currentUserId = "";
+  let currentDeleterState = null;
+  let isViewingProgress = true;
 
   // --- Check Slack Tab & Initialize ---
   async function init() {
@@ -226,9 +233,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateDeleterUI(state) {
     if (!state) return;
 
+    currentDeleterState = state;
+
     if (state.status === "deleting" || state.status === "paused" || state.status === "stopped") {
-      panelSetup.classList.add("hidden");
-      panelProgress.classList.remove("hidden");
+      if (isViewingProgress) {
+        panelSetup.classList.add("hidden");
+        panelProgress.classList.remove("hidden");
+      } else {
+        panelSetup.classList.remove("hidden");
+        panelProgress.classList.add("hidden");
+      }
+
+      const isRunning = state.status === "deleting" || state.status === "paused";
+      runningTaskBanner.classList.toggle("hidden", !isRunning);
+      runningTaskTitle.innerText = state.status === "paused"
+        ? "Tiến trình xóa đang tạm dừng"
+        : "Tiến trình xóa đang chạy nền";
+      runningTaskSummary.innerText = `Đã xóa: ${state.progress || 0} tin nhắn`;
+      btnStartDeletion.disabled = isRunning;
 
       // Progress bar & texts
       progressActiveChannel.innerText = `Kênh ID: ${state.currentChannelName || "-"}`;
@@ -255,8 +277,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Update logs
       renderLogs(state.logs || []);
     } else {
+      isViewingProgress = false;
       panelSetup.classList.remove("hidden");
       panelProgress.classList.add("hidden");
+      runningTaskBanner.classList.add("hidden");
+      btnStartDeletion.disabled = false;
     }
   }
 
@@ -353,6 +378,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Start Deletion
   btnStartDeletion.addEventListener("click", () => {
+    if (currentDeleterState?.status === "deleting" || currentDeleterState?.status === "paused") {
+      alert("Một tiến trình xóa đang hoạt động. Vui lòng dừng tiến trình hiện tại trước khi bắt đầu tiến trình mới.");
+      return;
+    }
+
     if (selectedChannelIds.size === 0) {
       alert("Vui lòng chọn ít nhất một cuộc hội thoại để xóa tin nhắn.");
       return;
@@ -387,6 +417,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   btnStop.addEventListener("click", () => {
     sendMessageToActiveTab({ action: "STOP_DELETION" });
+  });
+
+  btnBackMenu.addEventListener("click", () => {
+    isViewingProgress = false;
+    if (currentDeleterState) {
+      updateDeleterUI(currentDeleterState);
+    }
+  });
+
+  btnViewProgress.addEventListener("click", () => {
+    isViewingProgress = true;
+    if (currentDeleterState) {
+      updateDeleterUI(currentDeleterState);
+    }
   });
 
   btnClearLogs.addEventListener("click", async () => {
